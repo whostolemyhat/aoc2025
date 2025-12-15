@@ -9,6 +9,9 @@ fn main() -> Result<(), io::Error> {
     let total = calc_reachable(&input);
     println!("part 1: {total}");
 
+    let part_2_total = remove(&input);
+    println!("part 2: {part_2_total}");
+
     Ok(())
 }
 
@@ -26,38 +29,37 @@ fn calc_reachable(input: &str) -> u16 {
     total
 }
 
-fn remove() {
-    let mut map = Map::parse(&input);
-    let mut to_remove = HashSet::new();
+fn remove(input: &str) -> usize {
+    let mut map = Map::parse(input);
+    let mut to_remove = can_remove(&map);
+    let mut count = 0;
 
-    for roll in &map.rolls {
-        if map.count_neighbours(roll) < 4 {
-            to_remove.insert(roll);
-        }
-    }
-
-    if to_remove.len() > 0 {
+    while !to_remove.is_empty() {
+        count += to_remove.len();
         for roll in to_remove {
-            map.rolls.remove(roll);
+            map.rolls.remove(&roll);
         }
         // recurse
         // to_remove = 0;
+        to_remove = can_remove(&map);
     }
+
+    count
 }
 
-fn can_remove(map: &Map) -> HashSet<&Position> {
+fn can_remove(map: &Map) -> HashSet<Position> {
     let mut to_remove = HashSet::new();
 
     for roll in &map.rolls {
         if map.count_neighbours(roll) < 4 {
-            to_remove.insert(roll);
+            to_remove.insert(roll.clone());
         }
     }
 
     to_remove
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 struct Map {
     map: Vec<char>,
     width: usize,
@@ -65,7 +67,7 @@ struct Map {
     rolls: HashSet<Position>,
 }
 
-#[derive(Hash, PartialEq, Eq, Debug)]
+#[derive(Hash, PartialEq, Eq, Debug, Clone)]
 struct Position(usize, usize);
 
 impl Map {
@@ -156,10 +158,10 @@ impl Map {
 
 #[cfg(test)]
 mod test {
-    use crate::calc_reachable;
+    use crate::{calc_reachable, remove};
 
     #[test]
-    fn it_should_do_the_example() {
+    fn it_should_find_reachable() {
         let input = "..@@.@@@@.
 @@@.@.@.@@
 @@@@@.@.@@
@@ -172,5 +174,20 @@ mod test {
 @.@.@@@.@.";
 
         assert_eq!(calc_reachable(input), 13);
+    }
+
+    #[test]
+    fn it_should_remove_rolls() {
+        let input = "..@@.@@@@.
+@@@.@.@.@@
+@@@@@.@.@@
+@.@@@@..@.
+@@.@@@@.@@
+.@@@@@@@.@
+.@.@.@.@@@
+@.@@@.@@@@
+.@@@@@@@@.
+@.@.@@@.@.";
+        assert_eq!(remove(input), 43);
     }
 }

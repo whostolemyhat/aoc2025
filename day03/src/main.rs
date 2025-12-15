@@ -127,9 +127,42 @@ fn find_x(chars: &Vec<u32>, mut collection: Vec<u32>, start: i32, to_find: usize
     find_x(chars, collection, index as i32 + start + 1, to_find - 1)
 }
 
+struct IncreasingStack<T> {
+    data: Vec<T>,
+}
+
+impl<T> IncreasingStack<T>
+where
+    T: PartialOrd,
+{
+    fn new() -> Self {
+        Self { data: vec![] }
+    }
+
+    fn push(&mut self, item: T) {
+        match self.data.last() {
+            Some(last) => {
+                if item >= *last {
+                    self.data.push(item);
+                } else {
+                    while self.data.last().is_some()
+                        && *self.data.last().expect("failed to get last item") > item
+                    {
+                        self.data.pop();
+                    }
+                    self.data.push(item);
+                }
+            }
+            None => {
+                self.data.push(item);
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use crate::{find_largest, find_twelve};
+    use crate::{IncreasingStack, find_largest, find_twelve};
 
     #[test]
     fn it_should_find_largest_2_digits() {
@@ -145,5 +178,23 @@ mod test {
         assert_eq!(find_twelve("811111111111119"), 811111111119);
         assert_eq!(find_twelve("234234234234278"), 434234234278);
         assert_eq!(find_twelve("818181911112111"), 888911112111);
+    }
+
+    #[test]
+    fn stack_should_keep_numbers_in_order() {
+        let mut stack = IncreasingStack::<i32>::new();
+        stack.push(1);
+        stack.push(9);
+        stack.push(5);
+        assert_eq!(stack.data, vec![1, 5]);
+
+        let mut stack = IncreasingStack::<f32>::new();
+        stack.push(9.0);
+        stack.push(10.0);
+        stack.push(9.1);
+        stack.push(12.0);
+        stack.push(15.0);
+
+        assert_eq!(stack.data, vec![9.0, 9.1, 12.0, 15.0]);
     }
 }
