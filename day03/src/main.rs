@@ -33,6 +33,23 @@ fn calc_joltage_part_2(input: &str) -> u64 {
     total
 }
 
+fn process_stack(stack: &mut IncreasingStack<u32>, input: &str) -> u64 {
+    for line in input.lines() {
+        let chars: Vec<u32> = line
+            .chars()
+            .map(|n| n.to_digit(10).expect("Not a number"))
+            .collect();
+
+        for num in chars {
+            stack.push(num);
+        }
+
+        println!("{:?}", stack.data);
+    }
+
+    0
+}
+
 #[derive(Clone, Copy)]
 struct Record {
     num: u32,
@@ -162,7 +179,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::{IncreasingStack, find_largest, find_twelve};
+    use crate::{IncreasingStack, find_largest, find_twelve, process_stack};
 
     #[test]
     fn it_should_find_largest_2_digits() {
@@ -196,5 +213,11 @@ mod test {
         stack.push(15.0);
 
         assert_eq!(stack.data, vec![9.0, 9.1, 12.0, 15.0]);
+    }
+
+    #[test]
+    fn stack_should_find_largest() {
+        let mut stack = IncreasingStack::<u32>::new();
+        assert_eq!(process_stack(&mut stack, "987654321111111"), 987654321111);
     }
 }
