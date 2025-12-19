@@ -116,6 +116,14 @@ fn find_twelve(bank: &str) -> u64 {
         .expect("Failed to parse result")
 }
 
+// create stack
+// length of window
+// iter over window
+// add to stack
+// get last = highest
+// mark new start point
+// if window < remaining array, just return
+
 // recurse
 fn find_x(chars: &Vec<u32>, mut collection: Vec<u32>, start: i32, to_find: usize) -> Vec<u32> {
     if to_find == 0 {
