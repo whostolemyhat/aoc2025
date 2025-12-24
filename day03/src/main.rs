@@ -33,23 +33,6 @@ fn calc_joltage_part_2(input: &str) -> u64 {
     total
 }
 
-fn process_stack(stack: &mut IncreasingStack<u32>, input: &str) -> u64 {
-    for line in input.lines() {
-        let chars: Vec<u32> = line
-            .chars()
-            .map(|n| n.to_digit(10).expect("Not a number"))
-            .collect();
-
-        for num in chars {
-            stack.push(num);
-        }
-
-        println!("{:?}", stack.data);
-    }
-
-    0
-}
-
 #[derive(Clone, Copy)]
 struct Record {
     num: u32,
@@ -124,6 +107,46 @@ fn find_twelve(bank: &str) -> u64 {
 // mark new start point
 // if window < remaining array, just return
 
+fn do_a_stack(input: &str, max_len: usize) -> u64 {
+    let bytes = input.as_bytes();
+
+    let mut stack = Vec::with_capacity(max_len);
+    let mut increasing_stack = IncreasingStack::new(max_len);
+
+    let mut budget = bytes.len() - max_len;
+    let mut budget2 = bytes.len() - max_len;
+
+    for num in bytes {
+        // put bigger num in
+        // if last is smaller, remove from stack and update budget
+        // budget controls how many items we can remove
+        // if it hits 0 then just add everything remaining in inpput
+        while budget > 0 && !stack.is_empty() && num > stack.last().expect("No elements in stack") {
+            stack.pop();
+            budget -= 1;
+        }
+        stack.push(*num);
+
+        // or use struct as data structure
+        increasing_stack.push(*num, budget);
+    }
+
+    println!("{stack:?}");
+    println!("{:?}", increasing_stack.data);
+
+    increasing_stack
+        .data
+        .iter()
+        // if digits already in order then stack won't pop
+        // so limit to max_len
+        .take(max_len)
+        .fold(String::new(), |acc, b| {
+            acc + str::from_utf8(&[*b]).expect("Failed to parse")
+        })
+        .parse::<u64>()
+        .expect("Failed to parse result")
+}
+
 // recurse
 fn find_x(chars: &Vec<u32>, mut collection: Vec<u32>, start: i32, to_find: usize) -> Vec<u32> {
     if to_find == 0 {
@@ -160,18 +183,25 @@ impl<T> IncreasingStack<T>
 where
     T: PartialOrd,
 {
-    fn new() -> Self {
-        Self { data: vec![] }
+    fn new(capacity: usize) -> Self {
+        Self {
+            data: Vec::with_capacity(capacity),
+        }
     }
 
-    fn push(&mut self, item: T) {
+    fn is_empty(&self) -> bool {
+        self.data.len() == 0
+    }
+
+    fn push(&mut self, item: T, depth: usize) {
         match self.data.last() {
             Some(last) => {
                 if item >= *last {
                     self.data.push(item);
                 } else {
                     while self.data.last().is_some()
-                        && *self.data.last().expect("failed to get last item") > item
+                        && *self.data.last().expect("failed to get last item") < item
+                        && depth > 0
                     {
                         self.data.pop();
                     }
@@ -187,7 +217,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::{IncreasingStack, find_largest, find_twelve, process_stack};
+    use crate::{IncreasingStack, do_a_stack, find_largest, find_twelve};
 
     #[test]
     fn it_should_find_largest_2_digits() {
@@ -206,26 +236,32 @@ mod test {
     }
 
     #[test]
-    fn stack_should_keep_numbers_in_order() {
-        let mut stack = IncreasingStack::<i32>::new();
-        stack.push(1);
-        stack.push(9);
-        stack.push(5);
-        assert_eq!(stack.data, vec![1, 5]);
+    // fn stack_should_keep_numbers_in_order() {
+    //     let mut stack = IncreasingStack::<i32>::new();
+    //     stack.push(1);
+    //     stack.push(9);
+    //     stack.push(5);
+    //     assert_eq!(stack.data, vec![1, 5]);
 
-        let mut stack = IncreasingStack::<f32>::new();
-        stack.push(9.0);
-        stack.push(10.0);
-        stack.push(9.1);
-        stack.push(12.0);
-        stack.push(15.0);
+    //     let mut stack = IncreasingStack::<f32>::new();
+    //     stack.push(9.0);
+    //     stack.push(10.0);
+    //     stack.push(9.1);
+    //     stack.push(12.0);
+    //     stack.push(15.0);
 
-        assert_eq!(stack.data, vec![9.0, 9.1, 12.0, 15.0]);
-    }
-
+    //     assert_eq!(stack.data, vec![9.0, 9.1, 12.0, 15.0]);
+    // }
     #[test]
     fn stack_should_find_largest() {
-        let mut stack = IncreasingStack::<u32>::new();
-        assert_eq!(process_stack(&mut stack, "987654321111111"), 987654321111);
+        // let mut stack = IncreasingStack::<u32>::new();
+        // assert_eq!(process_stack(&mut stack, "987654321111111"), 987654321111);
+        assert_eq!(do_a_stack("987654321111111", 12), 987654321111);
     }
+
+    // #[test]
+    // fn test_stack() {
+    //     let input = "234234234234278";
+    //     assert_eq!(do_a_stack(input, 12), "43234234278")
+    // }
 }
